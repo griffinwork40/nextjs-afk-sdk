@@ -1,5 +1,6 @@
-# Multi-stage Dockerfile for Next.js + agent-afk
+# Multi-stage Dockerfile for Next.js + agent-afk (agent-native)
 # Optimized for Railway and other container platforms.
+# No Python required -- MCP servers are TypeScript.
 
 # --- Stage 1: Dependencies ---
 FROM node:20-alpine AS deps
@@ -42,8 +43,11 @@ COPY --from=builder /app/public ./public
 COPY --from=builder --chown=nextjs:nodejs /app/.next/standalone ./
 COPY --from=builder --chown=nextjs:nodejs /app/.next/static ./.next/static
 
-# Copy project-level AFK skills if they exist
-COPY --from=builder /app/.afk/skills/ ./.afk/skills/ 2>/dev/null || true
+# Copy agent-native project files
+COPY --from=builder --chown=nextjs:nodejs /app/.afk/ ./.afk/
+COPY --from=builder --chown=nextjs:nodejs /app/servers/ ./servers/
+COPY --from=builder --chown=nextjs:nodejs /app/.mcp.json ./.mcp.json
+COPY --from=builder --chown=nextjs:nodejs /app/AFK.md ./AFK.md
 
 USER nextjs
 

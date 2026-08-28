@@ -1,7 +1,7 @@
 #!/usr/bin/env node
 /**
  * Validate that the current directory is a valid Next.js project
- * suitable for agent-afk SDK integration.
+ * suitable for agent-native integration with agent-afk.
  */
 const fs = require('fs');
 const path = require('path');
@@ -58,12 +58,32 @@ if (fs.existsSync(pkgPath)) {
   }
 }
 
+// Check 5: Existing .afk/ directory?
+const afkDir = path.join(cwd, '.afk');
+if (fs.existsSync(afkDir)) {
+  checks.push({ name: '.afk/ directory', status: 'info', detail: 'Already exists -- will enhance, not overwrite' });
+} else {
+  checks.push({ name: '.afk/ directory', status: 'info', detail: 'Will be created' });
+}
+
+// Check 6: Existing .mcp.json?
+const mcpJson = path.join(cwd, '.mcp.json');
+if (fs.existsSync(mcpJson)) {
+  checks.push({ name: '.mcp.json', status: 'info', detail: 'Already exists -- will merge, not overwrite' });
+}
+
+// Check 7: AFK.md?
+const afkMd = path.join(cwd, 'AFK.md');
+if (fs.existsSync(afkMd)) {
+  checks.push({ name: 'AFK.md', status: 'info', detail: 'Already exists -- will enhance with agent sections' });
+}
+
 // Output
-console.log('\n=== Next.js Project Validation ===\n');
+console.log('\n=== Next.js Agent-Native Validation ===\n');
 for (const c of checks) {
   const icon = c.status === 'pass' ? '\u2705' : c.status === 'fail' ? '\u274C' : '\u2139\uFE0F';
   console.log(`${icon} ${c.name}: ${c.detail}`);
 }
 if (appDir) console.log(`\nApp directory: ${appDir}`);
-console.log(`\nResult: ${hasError ? 'FAILED - fix issues above' : 'READY for agent-afk integration'}`);
+console.log(`\nResult: ${hasError ? 'FAILED - fix issues above' : 'READY for agent-native integration'}`);
 process.exit(hasError ? 1 : 0);
