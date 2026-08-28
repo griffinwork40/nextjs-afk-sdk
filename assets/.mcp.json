@@ -1,0 +1,9 @@
+{
+  "mcpServers": {
+    "example": {
+      "command": "npx",
+      "args": ["tsx", "servers/example-server.ts"],
+      "env": {}
+    }
+  }
+}
