@@ -36,7 +36,21 @@ export async function POST(request: NextRequest) {
   }
 
   try {
-    // Validate environment
+    // Authenticate FIRST — never leak env details to unauthenticated callers.
+    const providedKey = request.headers.get('x-api-key') ?? '';
+    const expectedKey = process.env.AGENT_API_SECRET ?? '';
+    if (
+      !expectedKey ||
+      providedKey.length !== expectedKey.length ||
+      !timingSafeEqual(Buffer.from(providedKey), Buffer.from(expectedKey))
+    ) {
+      return NextResponse.json(
+        { success: false, error: 'Unauthorized' },
+        { status: 401 },
+      );
+    }
+
+    // Validate environment (after auth — details are safe to return now)
     const env = validateEnvironment();
     if (!env.valid) {
       return NextResponse.json(
@@ -46,19 +60,6 @@ export async function POST(request: NextRequest) {
           details: env.errors,
         },
         { status: 500 },
-      );
-    }
-
-    // Authenticate via shared-secret header
-    const providedKey = request.headers.get('x-api-key') ?? '';
-    const expectedKey = process.env.AGENT_API_SECRET!;
-    if (
-      providedKey.length !== expectedKey.length ||
-      !timingSafeEqual(Buffer.from(providedKey), Buffer.from(expectedKey))
-    ) {
-      return NextResponse.json(
-        { success: false, error: 'Unauthorized' },
-        { status: 401 },
       );
     }
 
