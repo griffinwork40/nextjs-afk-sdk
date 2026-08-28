@@ -66,10 +66,13 @@ export async function GET(request: NextRequest) {
 
   const status = errors.length === 0 ? 'healthy' : 'unhealthy';
 
-  return NextResponse.json({
-    status,
-    checks,
-    ...(errors.length > 0 && { errors }),
-    timestamp: new Date().toISOString(),
-  });
+  return NextResponse.json(
+    {
+      status,
+      checks,
+      ...(errors.length > 0 && { errors }),
+      timestamp: new Date().toISOString(),
+    },
+    errors.length > 0 ? { status: 503 } : undefined,
+  );
 }
