@@ -12,15 +12,17 @@
  */
 import type { QueryOptions } from 'agent-afk';
 import { readFileSync, existsSync, readdirSync } from 'fs';
-import { join, resolve } from 'path';
+import { join } from 'path';
 import { homedir } from 'os';
 
 // ---------------------------------------------------------------------------
 // Constants
 // ---------------------------------------------------------------------------
 
-/** Project root -- all relative paths resolve from here. */
-export const PROJECT_ROOT = resolve(__dirname, '../..');
+/** Project root -- all relative paths resolve from here.
+ *  Uses process.cwd() instead of __dirname so standalone Next.js builds
+ *  (output: 'standalone') resolve paths correctly at runtime. */
+export const PROJECT_ROOT = process.cwd();
 
 /** Default model for API route invocations. */
 export const DEFAULT_MODEL = 'sonnet';

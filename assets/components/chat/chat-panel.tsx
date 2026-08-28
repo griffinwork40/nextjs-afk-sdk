@@ -19,7 +19,17 @@ interface Message {
   toolCalls?: string[];
 }
 
-export function ChatPanel() {
+interface ChatPanelProps {
+  /**
+   * Shared secret for the /api/agent/stream endpoint (x-api-key header).
+   * Inject from a Server Component or environment variable — never hardcode
+   * this value in client-side source. Example:
+   *   <ChatPanel apiSecret={process.env.AGENT_API_SECRET} />
+   */
+  apiSecret?: string;
+}
+
+export function ChatPanel({ apiSecret }: ChatPanelProps = {}) {
   const [open, setOpen] = useState(false);
   const [messages, setMessages] = useState<Message[]>([]);
   const [input, setInput] = useState('');
@@ -48,7 +58,10 @@ export function ChatPanel() {
     try {
       const res = await fetch('/api/agent/stream', {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
+        headers: {
+          'Content-Type': 'application/json',
+          ...(apiSecret ? { 'x-api-key': apiSecret } : {}),
+        },
         body: JSON.stringify({ prompt }),
       });
 
@@ -93,8 +106,12 @@ export function ChatPanel() {
                 const updated = [...prev];
                 const last = updated[updated.length - 1];
                 if (last?.role === 'assistant') {
-                  last.content = assistantContent;
-                  last.toolCalls = toolCalls.length > 0 ? [...toolCalls] : undefined;
+                  // Spread into a new object — never mutate existing state references.
+                  updated[updated.length - 1] = {
+                    ...last,
+                    content: assistantContent,
+                    toolCalls: toolCalls.length > 0 ? [...toolCalls] : undefined,
+                  };
                 } else {
                   updated.push({
                     role: 'assistant',
@@ -125,7 +142,8 @@ export function ChatPanel() {
           const updated = [...prev];
           const last = updated[updated.length - 1];
           if (last?.role === 'assistant') {
-            last.content = assistantContent;
+            // Spread into a new object — never mutate existing state references.
+            updated[updated.length - 1] = { ...last, content: assistantContent };
           } else {
             updated.push({ role: 'assistant', content: assistantContent });
           }

@@ -125,10 +125,13 @@ export async function POST(request: NextRequest) {
 
   const encoder = new TextEncoder();
 
+  // Increment BEFORE constructing the ReadableStream so the concurrency guard
+  // is accurate even if the Response is returned before start() fires.
+  activeCalls++;
+
   // Return Response immediately; stream events inside ReadableStream.start()
   const stream = new ReadableStream({
     async start(controller) {
-      activeCalls++;
       try {
         const generator = query(finalPrompt, options);
 
@@ -144,7 +147,11 @@ export async function POST(request: NextRequest) {
         logError('agent-stream', `Request ${reqId} failed`, {
           error: message,
         });
-        const errorData = JSON.stringify({ type: 'error', error: message });
+        // Mirror the batch route's NODE_ENV check — never expose raw error
+        // messages to clients in production.
+        const clientMessage =
+          process.env.NODE_ENV === 'production' ? 'Internal server error' : message;
+        const errorData = JSON.stringify({ type: 'error', error: clientMessage });
         controller.enqueue(encoder.encode(`data: ${errorData}\n\n`));
       } finally {
         activeCalls--;

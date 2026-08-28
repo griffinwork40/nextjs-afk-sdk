@@ -20,6 +20,9 @@ WORKDIR /app
 COPY --from=deps /app/node_modules ./node_modules
 COPY . .
 ENV NEXT_TELEMETRY_DISABLED=1
+# Ensure agent-native optional files exist so the COPY steps in the runner
+# stage never fail on projects that haven't created them yet.
+RUN mkdir -p .afk servers && touch .mcp.json AFK.md
 RUN \
   if [ -f pnpm-lock.yaml ]; then corepack enable pnpm && pnpm build; \
   else npm run build; \

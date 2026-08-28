@@ -83,19 +83,17 @@ server.tool(
 // server.tool(
 //   'run_lint',
 //   'Run the project linter and return results',
-//   { path: z.string().optional().describe('File or directory to lint') },
-//   async ({ path }) => {
-//     const { execSync } = await import('child_process');
-//     const target = path ?? '.';
-//     try {
-//       const output = execSync(`npx eslint ${target} --format json`, {
-//         encoding: 'utf-8',
-//         timeout: 30_000,
-//       });
-//       return { content: [{ type: 'text', text: output }] };
-//     } catch (err: any) {
-//       return { content: [{ type: 'text', text: err.stdout || err.message }] };
-//     }
+//   {},
+//   async () => {
+//     // Use spawnSync with an argument array — never interpolate user input
+//     // into a shell command string (shell injection risk).
+//     const { spawnSync } = await import('child_process');
+//     const result = spawnSync('npx', ['eslint', '.', '--format', 'json'], {
+//       encoding: 'utf-8',
+//       timeout: 30_000,
+//     });
+//     const output = result.stdout || result.stderr || 'No output';
+//     return { content: [{ type: 'text', text: output }] };
 //   },
 // );
 
