@@ -12,14 +12,22 @@ let hasError = false;
 
 // Check 1: package.json with Next.js
 const pkgPath = path.join(cwd, 'package.json');
+let pkg = null;
 if (fs.existsSync(pkgPath)) {
-  const pkg = JSON.parse(fs.readFileSync(pkgPath, 'utf-8'));
-  const deps = { ...pkg.dependencies, ...pkg.devDependencies };
-  if (deps['next']) {
-    checks.push({ name: 'package.json with Next.js', status: 'pass', detail: `next@${deps['next']}` });
-  } else {
-    checks.push({ name: 'package.json with Next.js', status: 'fail', detail: 'Next.js not found in dependencies' });
+  try {
+    pkg = JSON.parse(fs.readFileSync(pkgPath, 'utf-8'));
+  } catch (e) {
+    checks.push({ name: 'package.json', status: 'fail', detail: `Could not parse package.json: ${e.message}` });
     hasError = true;
+  }
+  if (pkg) {
+    const deps = { ...pkg.dependencies, ...pkg.devDependencies };
+    if (deps['next']) {
+      checks.push({ name: 'package.json with Next.js', status: 'pass', detail: `next@${deps['next']}` });
+    } else {
+      checks.push({ name: 'package.json with Next.js', status: 'fail', detail: 'Next.js not found in dependencies' });
+      hasError = true;
+    }
   }
 } else {
   checks.push({ name: 'package.json', status: 'fail', detail: 'package.json not found' });
@@ -49,9 +57,8 @@ if (fs.existsSync(path.join(cwd, 'node_modules'))) {
   hasError = true;
 }
 
-// Check 4: Already has agent-afk?
-if (fs.existsSync(pkgPath)) {
-  const pkg = JSON.parse(fs.readFileSync(pkgPath, 'utf-8'));
+// Check 4: Already has agent-afk?  (reuse the already-parsed pkg object)
+if (pkg) {
   const deps = { ...pkg.dependencies, ...pkg.devDependencies };
   if (deps['agent-afk']) {
     checks.push({ name: 'agent-afk', status: 'info', detail: `Already installed: ${deps['agent-afk']}` });

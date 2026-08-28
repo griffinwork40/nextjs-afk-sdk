@@ -3,22 +3,42 @@
  *
  * Validates: API key configured, agent-afk importable, MCP config present,
  * .afk/ directory exists.
+ *
+ * Specific env-var names are only returned to authenticated callers
+ * (x-api-key == AGENT_API_SECRET) to prevent information leakage.
  */
-import { NextResponse } from 'next/server';
+import { NextRequest, NextResponse } from 'next/server';
+import { timingSafeEqual } from 'crypto';
 import { existsSync } from 'fs';
 import { join } from 'path';
 import { validateEnvironment, PROJECT_ROOT } from '@/lib/agentConfig';
 
 export const runtime = 'nodejs';
 
-export async function GET() {
+export async function GET(request: NextRequest) {
   const checks: Record<string, boolean | string> = {};
   const errors: string[] = [];
+
+  // Determine whether the caller is authenticated so we can decide how much
+  // detail to surface in the errors[] array.
+  const secret = process.env.AGENT_API_SECRET ?? '';
+  const providedKey = request.headers.get('x-api-key') ?? '';
+  const isAuthenticated =
+    secret.length > 0 &&
+    providedKey.length === secret.length &&
+    timingSafeEqual(Buffer.from(providedKey), Buffer.from(secret));
 
   // Check API keys
   const env = validateEnvironment();
   checks.apiKey = env.valid;
-  if (!env.valid) errors.push(...env.errors);
+  if (!env.valid) {
+    // Only expose specific variable names to authenticated callers.
+    if (isAuthenticated) {
+      errors.push(...env.errors);
+    } else {
+      errors.push('Required environment variables are not configured');
+    }
+  }
 
   // Check agent-afk is importable
   try {
